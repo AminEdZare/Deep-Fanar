@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Distribution / packaging
+.Python
+env/
+venv/
+*.egg
+*.whl
+
+# C extensions
+*.so
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# OS generated files
+.Trash-*
+ehthumbs.db
+Thumbs.db
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Environment variables and sensitive data
+.env
+.flaskenv
+
+# Miscellaneous
+dist/
+build/
