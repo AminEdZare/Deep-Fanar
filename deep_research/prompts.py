@@ -100,7 +100,7 @@ summarize_english_system_prompt = (
     "The one-paragraph summary of the text should be concise and succintly capture the main idea of the scraped text you read in around 1000 characters."
 
     "You are about to read the scraped text and the user's original query.\n"
-    "Write **ONLY** the summary and **NOTHING** else.\n"
+    "Write **ONLY** the summary and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 1000 characters.)\"\n"
 )
 
 summarize_arabic_system_prompt = (
@@ -122,7 +122,7 @@ summarize_arabic_system_prompt = (
     "The one-paragraph summary of the text should be concise and succintly capture the main idea of the scraped text you read in around 1000 characters."
 
     "You are about to read the scraped text and the user's original query.\n"
-    "Write **ONLY** the summary and **NOTHING** else.\n"
+    "Write **ONLY** the summary and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 1000 characters.)\"\n"
 )
 
 synthesizer_system_prompt = (
@@ -144,5 +144,5 @@ synthesizer_system_prompt = (
     "The one-paragraph abstract of the text should be concise and succintly capture the main ideas of every summary to around 2000 characters."
 
     "You are about to read every summary and the user's original query.\n"
-    "Write **ONLY** the abstract and **NOTHING** else.\n"
+    "Write **ONLY** the abstract and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 1000 characters.)\"\n"
 )
