@@ -1,0 +1,20 @@
+# ── LangGraph Supervisor ─────────────────────────────────────────────────
+langgraph-supervisor         # for `create_supervisor` from langgraph_supervisor
+
+# ── Core LLM + agent stack ────────────────────────────────────────────────
+langgraph>=0.0.48
+langchain-openai>=0.3.5      # importable as `langchain_openai`
+langchain-community>=0.0.29  # `langchain_community.*` integrations
+openai>=1.25.1
+tiktoken>=0.5.1              # token‑counting utility
+
+# ── Web search & scraping ────────────────────────────────────────────────
+duckduckgo-search>=4.3.0     # importable as `duckduckgo_search`
+requests>=2.31.0
+beautifulsoup4>=4.12.3
+tavily-python>=0.3.0         # Tavily Search API client (importable as `tavily`)
+
+# ── Convenience ──────────────────────────────────────────────────────────
+python-dotenv>=1.0.1         # load API keys from .env files
+ipython                      # for `IPython.display` (e.g., `display`, `Image`)
+pillow>=10.3.0               # for `from PIL import Image as PILImage`
