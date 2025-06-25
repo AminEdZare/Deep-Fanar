@@ -1,7 +1,7 @@
 import asyncio
 from llm import ask
 from datetime import date
-import ast
+import re
 
 from tools import url_scrape, tavily_search, google_search, shorten_url
 
@@ -21,7 +21,8 @@ async def main() -> None:
     #original_query = input("User: ")
     #original_query = "Research recent papers on multi-agent systems" # this is just an example
     #original_query = "What's the newest iPhone?"
-    original_query = "What are the health benefits and potential side effects of drinking green tea?"
+    #original_query = "What are the health benefits and potential side effects of drinking green tea?"
+    original_query = "Can recent discoveries in brain plasticity and connectome mapping reshape how we train reinforcement learning models?"
     temp_new_query = original_query
     temp_summary_query = original_query
 
@@ -76,64 +77,91 @@ async def main() -> None:
         arabic_queries.append(queries[1])
 
         # -- search the newest queries -- #
-        english_search_results = tavily_search(english_queries[-1])
-        arabic_search_results = google_search(arabic_queries[-1])
+        new_en_urls = tavily_search(english_queries[-1])[:2]   # ≤2
+        new_ar_urls = google_search(arabic_queries[-1])[:2]     # ≤2
+        
+        # -- scrape the new URLs, keeping only successful ones -- #
+        good_en_urls, good_en_scrapes = [], []
+        bad_en_urls, bad_en_scrapes = [], []
+        for url in new_en_urls:
+            scrape = url_scrape(url)
+            if scrape.startswith("Failed to scrape content"):
+                # still keeping bad for maintenance
+                bad_en_urls.append(url)
+                bad_en_scrapes.append(scrape)
+                continue              # skip bad English scrape
+            good_en_urls.append(url)
+            good_en_scrapes.append(scrape)
 
-        english_urls.extend(english_search_results[-2:])
-        arabic_urls.extend(arabic_search_results[-2:])
+        good_ar_urls, good_ar_scrapes = [], []
+        bad_ar_urls, bad_ar_scrapes = [], []
+        for url in new_ar_urls:
+            scrape = url_scrape(url)
+            if scrape.startswith("Failed to scrape content"):
+                # still keeping bad for maintenance
+                bad_ar_urls.append(url)
+                bad_ar_scrapes.append(scrape)
+                continue              # skip bad Arabic scrape
+            good_ar_urls.append(url)
+            good_ar_scrapes.append(scrape)
 
-        # uncomment this to debug
-        print("====URLS====")
-        print(english_urls[-2:])
-        print(arabic_urls[-2:])
-
-        # -- scrape the urls -- #
-        english_scrapes.extend(map(url_scrape, english_urls[-2:]))
-        arabic_scrapes.extend(map(url_scrape, arabic_urls[-2:]))
-
+        # -- store only successful results -- #
+        english_urls.extend(good_en_urls)
+        arabic_urls.extend(good_ar_urls)
+        english_scrapes.extend(good_en_scrapes)
+        arabic_scrapes.extend(good_ar_scrapes)
+        
         # uncomment this to debug
         print("====SCRAPES====")
-        print(english_scrapes[-2] + '\n\n' + english_scrapes[-1])
-        print(arabic_scrapes[-2] + '\n\n' + arabic_scrapes[-1])
-
+        print(good_en_scrapes, "\n")
+        print(good_ar_scrapes, "\n")
+        print(bad_en_scrapes, "\n")
+        print(bad_ar_scrapes, "\n")
 
         # -- summarize the scrapes in parallel -- #
-        summarize_system_prompts = [
-            (summarize_english_system_prompt + f"text: {english_scrapes[-2]}\n"),
-            (summarize_english_system_prompt + f"text: {english_scrapes[-1]}\n"),
-            (summarize_arabic_system_prompt + f"text: {arabic_scrapes[-2]}\n"),
-            (summarize_arabic_system_prompt + f"text: {arabic_scrapes[-1]}\n"),
-        ]
+        summarize_system_prompts = (
+            [summarize_english_system_prompt + f"text: {s}\n" for s in good_en_scrapes] +
+            [summarize_arabic_system_prompt  + f"text: {s}\n" for s in good_ar_scrapes]
+        )
         summaries = await asyncio.gather(*(ask(summarize_system_prompt, temp_summary_query) for summarize_system_prompt in summarize_system_prompts))
         temp_summary_query = "Write a summary."
 
-        english_summaries.append(summaries[0])
-        english_summaries.append(summaries[1])
-        arabic_summaries.append(summaries[2])
-        arabic_summaries.append(summaries[3])
+        # first `new_en_scrapes` are EN; rest AR
+        en_count = len(good_en_scrapes)
+        english_summaries.extend(summaries[:en_count])
+        arabic_summaries.extend(summaries[en_count:])
 
         # uncomment this to debug
         print("====SUMMARIES====")
-        print(summaries[-4])
-        print(summaries[-3])
-        print(summaries[-2])
-        print(summaries[-1])
+        print(summaries[:en_count], "\n")
+        print(summaries[en_count:])
     
     # -- synthesize every summary into a final response -- #
     synthesis = await ask(synthesizer_system_prompt + 
                           f"English summaries: {english_summaries}\nArabic summaries: {arabic_summaries}\n", 
                           original_query)
+    # clean up unwanted tags like <think>...</think>
+    synthesis_clean = re.sub(r"<think>.*?</think>", "", synthesis, flags=re.DOTALL).strip()
 
     # printing everything
     print("===FINISHED RESEARCHING===")
-    print(f"Abstract: \n{synthesis}\n")
+    print(f"Overall summary: \n{synthesis_clean}\n")
 
-    counter = 1
-    for en_url, en_sum, ar_url, ar_sum in zip(english_urls, english_summaries, arabic_urls, arabic_summaries):
-        print(f"Source {counter} - {en_url}: \n{en_sum}\n")
-        counter += 1
-        print(f"Source {counter} - {ar_url}: \n{ar_sum}\n")
-        counter += 1
+    # interweave
+    en_counter = 0
+    ar_counter = 0
+    while(en_counter < len(english_urls) and ar_counter < len(arabic_urls)):
+        print(f"English source {en_counter + 1} - {english_urls[en_counter]}: \n{english_summaries[en_counter]}\n")
+        en_counter += 1
+        print(f"Arabic source {ar_counter + 1} - {arabic_urls[ar_counter]}: \n{arabic_summaries[ar_counter]}\n")
+        ar_counter += 1
+    # flush
+    while (en_counter < len(english_urls)):
+        print(f"English source {en_counter + 1} - {english_urls[en_counter]}: \n{english_summaries[en_counter]}\n")
+        en_counter += 1
+    while(ar_counter < len(arabic_urls)):
+        print(f"Arabic source {ar_counter + 1} - {arabic_urls[ar_counter]}: \n{arabic_summaries[ar_counter]}\n")
+        ar_counter += 1
 
     print("===END===")
 
