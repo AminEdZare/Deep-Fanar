@@ -5,9 +5,12 @@ from tavily import TavilyClient
 
 load_dotenv()
 FANAR_API_KEY = os.getenv("FANAR_API_KEY")
-TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
 
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
 tavily_client = TavilyClient(TAVILY_API_KEY)
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CX_ID = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
 
 fanar_client = AsyncOpenAI(
     base_url="https://api.fanar.qa/v1",
@@ -24,5 +27,6 @@ async def ask(system_prompt: str, user_prompt: str) -> str:
             model=MODEL,
             messages=[{"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}],
+            temperature = 0
         )
     return resp.choices[0].message.content

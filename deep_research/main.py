@@ -3,7 +3,7 @@ from llm import ask
 from datetime import date
 import ast
 
-from tools import url_scrape, tavily_search
+from tools import url_scrape, tavily_search, google_search, shorten_url
 
 from prompts import (
     planner_system_prompt,
@@ -20,7 +20,7 @@ from prompts import (
 async def main() -> None:
     #original_query = input("User: ")
     #original_query = "Research recent papers on multi-agent systems" # this is just an example
-    original_query = "What's the newest iPhone?"
+    #original_query = "What's the newest iPhone?"
 
     number_of_loops: int = 0
 
@@ -72,7 +72,7 @@ async def main() -> None:
 
         # -- search the newest queries -- #
         english_search_results = tavily_search(english_queries[-1])
-        arabic_search_results = tavily_search(arabic_queries[-1])
+        arabic_search_results = google_search(arabic_queries[-1])
 
         english_urls.append(english_search_results[0])
         english_urls.append(english_search_results[1])
