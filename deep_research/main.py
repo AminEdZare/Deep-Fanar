@@ -21,6 +21,9 @@ async def main() -> None:
     #original_query = input("User: ")
     #original_query = "Research recent papers on multi-agent systems" # this is just an example
     #original_query = "What's the newest iPhone?"
+    original_query = "What are the health benefits and potential side effects of drinking green tea?"
+    temp_new_query = original_query
+    temp_summary_query = original_query
 
     number_of_loops: int = 0
 
@@ -60,7 +63,9 @@ async def main() -> None:
                                     f"Current summaries: {arabic_summaries}")]
 
         # runs both ask function calls in parallel
-        queries = await asyncio.gather(*(ask(query_system_prompt, original_query) for query_system_prompt in queries_system_prompts))
+        queries = await asyncio.gather(*(ask(query_system_prompt, temp_new_query) for query_system_prompt in queries_system_prompts))
+
+        temp_new_query = "Write a follow-up query." # reset
 
         # uncomment this to debug
         print("====QUERIES====")
@@ -74,11 +79,8 @@ async def main() -> None:
         english_search_results = tavily_search(english_queries[-1])
         arabic_search_results = google_search(arabic_queries[-1])
 
-        english_urls.append(english_search_results[0])
-        english_urls.append(english_search_results[1])
-
-        arabic_urls.append(arabic_search_results[0])
-        arabic_urls.append(arabic_search_results[1])
+        english_urls.extend(english_search_results[-2:])
+        arabic_urls.extend(arabic_search_results[-2:])
 
         # uncomment this to debug
         print("====URLS====")
@@ -86,11 +88,8 @@ async def main() -> None:
         print(arabic_urls[-2:])
 
         # -- scrape the urls -- #
-        english_scrapes.append(url_scrape(english_urls[-1]))
-        english_scrapes.append(url_scrape(english_urls[-2]))
-
-        arabic_scrapes.append(url_scrape(arabic_urls[-1]))
-        arabic_scrapes.append(url_scrape(arabic_urls[-2]))
+        english_scrapes.extend(map(url_scrape, english_urls[-2:]))
+        arabic_scrapes.extend(map(url_scrape, arabic_urls[-2:]))
 
         # uncomment this to debug
         print("====SCRAPES====")
@@ -100,17 +99,18 @@ async def main() -> None:
 
         # -- summarize the scrapes in parallel -- #
         summarize_system_prompts = [
-            (summarize_english_system_prompt + f"text: {english_scrapes[-1]}\n"),
             (summarize_english_system_prompt + f"text: {english_scrapes[-2]}\n"),
-            (summarize_arabic_system_prompt + f"text: {arabic_scrapes[-1]}\n"),
+            (summarize_english_system_prompt + f"text: {english_scrapes[-1]}\n"),
             (summarize_arabic_system_prompt + f"text: {arabic_scrapes[-2]}\n"),
+            (summarize_arabic_system_prompt + f"text: {arabic_scrapes[-1]}\n"),
         ]
-        summaries = await asyncio.gather(*(ask(summarize_system_prompt, original_query) for summarize_system_prompt in summarize_system_prompts))
+        summaries = await asyncio.gather(*(ask(summarize_system_prompt, temp_summary_query) for summarize_system_prompt in summarize_system_prompts))
+        temp_summary_query = "Write a summary."
 
-        english_summaries.append(summaries[-4])
-        english_summaries.append(summaries[-3])
-        arabic_summaries.append(summaries[-2])
-        arabic_summaries.append(summaries[-1])
+        english_summaries.append(summaries[0])
+        english_summaries.append(summaries[1])
+        arabic_summaries.append(summaries[2])
+        arabic_summaries.append(summaries[3])
 
         # uncomment this to debug
         print("====SUMMARIES====")
@@ -120,7 +120,9 @@ async def main() -> None:
         print(summaries[-1])
     
     # -- synthesize every summary into a final response -- #
-    synthesis = await ask(synthesizer_system_prompt + f"English summaries: {english_summaries}\nArabic summaries: {arabic_summaries}\n", original_query)
+    synthesis = await ask(synthesizer_system_prompt + 
+                          f"English summaries: {english_summaries}\nArabic summaries: {arabic_summaries}\n", 
+                          original_query)
 
     # printing everything
     print("===FINISHED RESEARCHING===")

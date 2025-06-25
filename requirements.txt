@@ -3,3 +3,4 @@ beautifulsoup4>=4.12.3   # provides bs4
 python-dotenv>=1.0.1      # provides dotenv
 openai>=1.25.1            # includes AsyncOpenAI
 tavily-python>=0.3.0      # provides tavily
+pdfminer.six>=20250506    # robust PDF parser/extractor

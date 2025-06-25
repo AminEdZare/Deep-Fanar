@@ -43,7 +43,7 @@ english_queries_system_prompt = (
     "3. It searches those queries and retrieves the top two most relevant urls for each query.\n"
     "4. It scrapes the .html of those websites.\n"
     "5. It processes the scraped information from those websites and summarizes it an abstract-like paragraph for each website in parallel.\n"
-    "6. In a loop, it evaluates the original user query, the searched queries, the summaries, and then determines what follow-up queries are needed to fully answer the user's original query, going back to step 3.\n"
+    "6. In a loop, it evaluates the searched queries, the summaries, and then determines what follow-up queries are needed to fully answer the user's original query, going back to step 3.\n"
     "7. It synthesizes every summary into a final response.\n"
 
     "After reading what queries already been searched, what summaries have already been written, and what the the user's original query is, determine one follow-up English query to search.\n"
@@ -52,7 +52,7 @@ english_queries_system_prompt = (
     "Broad queries are short and explore general overviews and introductory information such as \"What are electric vehicles\" or \"Top-selling electric vehicles\" or \"What is a RESTful API\"\n"
     "whereas specific queries are long and pin down concrete details such as \"What is the energy-density of the 2024 Tesla Model 3 LFP battery pack\" or \"What is the drag coefficient of the Mercedes EQE (V295)\" or \"Caching strategy to reduce read latency in a RESTful API\"\n"
 
-    "You are about to read the already searched queries, current summaries, and the user's original query to determine what additional English query is needed.\n"
+    "You are about to read the already searched queries and the current summaries to determine what additional English query is needed.\n"
     "Write **ONLY** the one English search query and **NOTHING** else, **NOT** even quotation marks.\n"
 )
 
@@ -68,7 +68,7 @@ arabic_queries_system_prompt = (
     "3. It searches those queries and retrieves the top two most relevant urls for each query.\n"
     "4. It scrapes the .html of those websites.\n"
     "5. It processes the scraped information from those websites and summarizes it an abstract-like paragraph for each website in parallel.\n"
-    "6. In a loop, it evaluates the original user query, the searched queries, the summaries, and then determines what follow-up queries are needed to fully answer the user's original query, going back to step 3.\n"
+    "6. In a loop, it evaluates the the searched queries, the summaries, and then determines what follow-up queries are needed to fully answer the user's original query, going back to step 3.\n"
     "7. It synthesizes every summary into a final response.\n"
 
     "After reading what queries already been searched, what summaries have already been written, and what the the user's original query is, determine one follow-up Arabic query to search.\n"
@@ -77,7 +77,7 @@ arabic_queries_system_prompt = (
     "Broad queries are short and explore general overviews and introductory information such as \"What are electric vehicles\" or \"Top-selling electric vehicles\"\n"
     "whereas specific queries are long and pin down concrete details such as \"What is the energy-density of the 2024 Tesla Model 3 LFP battery pack\" or \"What is the drag coefficient of the Mercedes EQE (V295)\"\n"
 
-    "You are about to read the already searched queries, current summaries, and the user's original query to determine what additional Arabic query is needed.\n"
+    "You are about to read the already searched queries and current summaries to determine what additional Arabic query is needed.\n"
     "Write **ONLY** the one Arabic search query and **NOTHING** else, **NOT** even quotation marks.\n"
 )
 
@@ -97,10 +97,10 @@ summarize_english_system_prompt = (
     "7. It synthesizes every summary into a final response.\n"
 
     "After reading a scraped text and what the the user's original query is, write a one-paragraph summary of the text.\n"
-    "The one-paragraph summary of the text should be concise and succintly capture the main idea of the scraped text you read in around 1000 characters."
+    "The one-paragraph summary of the text should be concise and succintly capture the main idea of the scraped text you read in around 2000 characters."
 
     "You are about to read the scraped text and the user's original query.\n"
-    "Write **ONLY** the summary and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 1000 characters.)\"\n"
+    "Write **ONLY** the summary and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 2000 characters.)\" or \"Here is a concise summary of the provided text within approximately 2000 characters:\"\n"
 )
 
 summarize_arabic_system_prompt = (
@@ -119,10 +119,10 @@ summarize_arabic_system_prompt = (
     "7. It synthesizes every summary into a final response.\n"
 
     "After reading a scraped text and what the the user's original query is, write a one-paragraph summary of the text.\n"
-    "The one-paragraph summary of the text should be concise and succintly capture the main idea of the scraped text you read in around 1000 characters."
+    "The one-paragraph summary of the text should be concise and succintly capture the main idea of the scraped text you read in around 2000 characters."
 
     "You are about to read the scraped text and the user's original query.\n"
-    "Write **ONLY** the summary and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 1000 characters.)\"\n"
+    "Write **ONLY** the summary and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 2000 characters.)\" or \"Here is a concise summary of the provided text within approximately 2000 characters:\"\n"
 )
 
 synthesizer_system_prompt = (
@@ -141,8 +141,8 @@ synthesizer_system_prompt = (
     "7. It synthesizes every summary into a final response.\n"
 
     "After reading every and what the the user's original query is, write an abstract of every summary to best answer the user's query.\n"
-    "The one-paragraph abstract of the text should be concise and succintly capture the main ideas of every summary to around 2000 characters."
+    "The one-paragraph abstract of the text should be concise and succintly capture the main ideas of every summary to around 4000 characters."
 
     "You are about to read every summary and the user's original query.\n"
-    "Write **ONLY** the abstract and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 1000 characters.)\"\n"
+    "Write **ONLY** the abstract and **NOTHING** else. Do **NOT** include anything in the form of \"(Note: As per the instruction, I will provide a concise summary within approximately 4000 characters.)\" or \"Here is a concise summary of the provided text within approximately 4000 characters:\"\n"
 )
