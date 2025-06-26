@@ -5,3 +5,5 @@ openai>=1.25.1            # includes AsyncOpenAI
 tavily-python>=0.3.0      # provides tavily
 pdfminer.six>=20250506    # robust PDF parser/extractor
 Pillow>=10.3.0            # provides PIL.Image
+fastapi>=0.111.0 # Added for the web framework
+uvicorn>=0.30.1 # Added for the ASGI server that runs FastAPI

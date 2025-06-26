@@ -1,0 +1,360 @@
+/* deep-research-frontend/src/index.css */
+
+/* Import a clean sans-serif font for better typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Base styles */
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%; /* Ensure full height for root containers */
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-smoothing: grayscale;
+  background-color: #1a202c; /* Background on body */
+  color: #e2e8f0;
+  overflow-y: auto; /* Body handles the main scrollbar */
+  overflow-x: hidden; /* Prevent horizontal scrollbar */
+}
+
+/* Simple scrollbar styling for dark theme */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2d3748; /* Darker track */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a5568; /* Slightly lighter thumb */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #626f84;
+}
+
+/* Main chat container */
+.chat-container {
+  min-height: calc(100vh - 3.5rem - 7.25rem); /* Header height (3.5rem) + Estimated accurate footer total height (7.25rem) */
+  background-color: transparent;
+  color: #e2e8f0;
+}
+
+/* HEADER STYLES - FIXED at the top */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5rem; /* Header height */
+  background-color: #1a202c;
+  /* border-bottom and box-shadow removed as requested */
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  z-index: 40;
+}
+
+.header-brand {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #90cdf4;
+}
+
+/* Removed .clear-chat-button styling */
+
+/* Chat messages area - The content that scrolls with the body */
+.chat-messages-area {
+  overflow-y: visible; /* No longer handles its own scrollbar */
+  position: relative;
+  padding: 1.5rem; /* Standard internal padding for messages */
+
+  /* Paddings to account for fixed header/footer */
+  padding-top: calc(3.5rem + 1.5rem); /* Header height + desired space above first message */
+  padding-bottom: calc(8.75rem + 1.5rem); /* Total footer visual height (8.75rem approx) + desired space below last message */
+
+  display: flex; /* Keep flex for message layout within its area */
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 45rem; /* Reduced max-width for chat log */
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  background-color: transparent;
+  border-radius: 0.75rem;
+  box-shadow: none;
+  z-index: 1; /* Ensure messages are below fixed elements if any overlap */
+}
+
+/* Initial greeting message */
+.initial-greeting {
+  text-align: center;
+  color: #a0aec0;
+  margin-top: 5rem;
+  font-size: 1.125rem;
+  opacity: 0.8;
+}
+
+/* Message row (container for avatar + bubble) */
+.message-row {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* User messages on the right, with avatar AFTER the bubble */
+.message-row-user {
+  flex-direction: row-reverse;
+  margin-left: auto;
+}
+
+.message-row-ai {
+  justify-content: flex-start;
+}
+
+/* Avatars */
+.avatar {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.25rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.user-avatar {
+  background-color: #4a5568;
+  color: #e2e8f0;
+  margin-left: 0.75rem;
+  margin-right: 0;
+}
+
+.ai-avatar {
+  background-color: #2b6cb0;
+  color: #fff;
+  margin-right: 0.75rem;
+}
+
+/* SVG icons within avatars/buttons */
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke: currentColor;
+}
+
+/* Message Bubbles */
+.message-bubble {
+  padding: 1rem 1.25rem;
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  max-width: 70%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: all 0.2s ease-in-out;
+}
+
+.user-bubble {
+  background-color: #2c5282;
+  color: #fff;
+  border-top-left-radius: 1.25rem;
+  border-bottom-left-radius: 1.25rem;
+  border-top-right-radius: 0.25rem;
+}
+
+.ai-bubble {
+  background-color: #2d3748;
+  color: #e2e8f0;
+  border-top-left-radius: 0.25rem;
+}
+
+.error-bubble {
+  background-color: #c53030;
+  color: #fff;
+  text-align: center;
+  margin: 0 auto;
+  border-radius: 0.75rem;
+  max-width: 80%;
+}
+
+/* Styling for HTML content that might come from LLM (e.g., markdown to HTML) */
+.ai-bubble div h1, .ai-bubble div h2, .ai-bubble div h3, .ai-bubble div h4, .ai-bubble div h5, .ai-bubble div h6 {
+    color: #90cdf4;
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+    line-height: 1.3;
+}
+.ai-bubble div p {
+    margin-bottom: 1em;
+}
+.ai-bubble div ul, .ai-bubble div ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1em;
+    list-style-position: outside;
+}
+.ai-bubble div li {
+    margin-bottom: 0.5em;
+}
+.ai-bubble div a {
+    color: #63b3ed;
+    text-decoration: underline;
+}
+.ai-bubble div strong {
+    color: #fff;
+}
+
+
+/* Fixed footer area for the input field */
+.chat-footer-area {
+  position: fixed; /* Fixed to the bottom of the viewport */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #1a202c;
+  padding: 0;
+  border-top: none;
+  box-shadow: 0 -10px 25px 0px #1a202c; /* Original shadow */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+}
+
+/* The actual input field's visual container within the footer */
+.input-wrapper-container {
+  display: flex;
+  align-items: flex-end;
+  max-width: 45rem; /* Reduced max-width for input text */
+  width: calc(100% - 3rem);
+  margin: 0rem 1.5rem 2.25rem 1.5rem; /* top, right, bottom, left */
+  background-color: #1a202c;
+  border-radius: 1.5rem;
+  border: 1px solid #718096;
+  padding: 0.75rem 1rem;
+  position: relative;
+}
+
+/* Error message that floats above the input field (positioned within chat-footer-area) */
+.error-message-fixed {
+    text-align: center;
+    color: #fc8181;
+    font-size: 0.875rem;
+    z-index: 21;
+    padding: 0 0.5rem 0.5rem 0.5rem;
+    background-color: transparent;
+    width: 100%;
+    max-width: 52rem; /* Kept this at 52rem as it's separate, but could be matched if needed */
+    box-sizing: border-box;
+}
+
+
+/* Textarea styles */
+.chat-textarea {
+  flex: 1;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  color: #e2e8f0;
+  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  resize: none;
+  overflow-y: auto; /* Textarea can still scroll internally if its content overflows its min/max height */
+  max-height: 120px;
+  min-height: 3.5rem;
+}
+
+.chat-textarea::placeholder {
+  color: #a0aec0;
+  opacity: 0.7;
+}
+
+.chat-textarea:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+/* Send button - positioned within the input container */
+.send-button {
+  flex-shrink: 0;
+  background-color: #2c63a7;
+  border-radius: 50%;
+  height: 2.5rem;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  margin-left: 0.5rem;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Explicitly ensure the icon remains white on hover and in disabled state */
+.send-button .icon {
+  stroke: white;
+  fill: none;
+}
+
+.send-button:hover:not(:disabled) {
+  background-color: #3182ce;
+}
+
+.send-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #5a6d80;
+}
+
+
+/* Icon buttons (general, like attachment if re-added) */
+.icon-button {
+  padding: 0.5rem;
+  color: #a0aec0;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+  flex-shrink: 0;
+}
+
+.icon-button:hover:not(:disabled) {
+  color: #e2e8f0;
+}
+
+
+/* Spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.spinner .path {
+    opacity: 0.25;
+    stroke: currentColor;
+}
+
+.spinner .segment {
+    opacity: 0.75;
+    fill: currentColor;
+}
+
+/* Loading text for progress messages */
+.loading-text {
+    color: #90cdf4;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+}

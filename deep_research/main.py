@@ -1,28 +1,24 @@
+# deep_research/main.py (MODIFIED FOR CONCISE PROGRESS)
+
 import asyncio
-from llm import ask
-from datetime import date
 import re
+from datetime import date 
+import json 
 
+from llm import ask
 from tools import url_scrape, tavily_search, google_search, shorten_url
-
 from prompts import (
     planner_system_prompt,
-
     english_queries_system_prompt,
     arabic_queries_system_prompt,
-
     summarize_english_system_prompt,
     summarize_arabic_system_prompt,
-
     synthesizer_system_prompt
 )
 
-async def main() -> None:
-    #original_query = input("User: ")
-    #original_query = "Research recent papers on multi-agent systems" # this is just an example
-    #original_query = "What's the newest iPhone?"
-    #original_query = "What are the health benefits and potential side effects of drinking green tea?"
-    original_query = "Given the AI boom, how can engineers stay ahead of the curve other than mastering AI prompting"
+async def run_research(original_query: str):
+    yield {"type": "progress", "stage": "Planning research strategy...", "detail": ""}
+    
     temp_new_query = original_query
     temp_summary_query = original_query
 
@@ -40,122 +36,107 @@ async def main() -> None:
     english_summaries: list[str] = []
     arabic_summaries: list[str] = []
 
-    # -- determine number of loops -- #
-    number_of_loops = int(await ask(planner_system_prompt, original_query))
+    number_of_loops_str = await ask(planner_system_prompt, original_query)
+    try:
+        number_of_loops = int(number_of_loops_str)
+    except ValueError:
+        print(f"Warning: Planner returned non-integer '{number_of_loops_str}'. Defaulting to 1 loop.")
+        number_of_loops = 1 
 
-    if number_of_loops not in [1, 2, 3, 4, 5, 6]:
-        print("error: number_of_loops not in [1, 2, 3, 4, 5, 6]")
-    else:
-        print(f"number_of_loops = {number_of_loops}")
+    if not (1 <= number_of_loops <= 6):
+        print(f"Warning: number_of_loops ({number_of_loops}) out of expected range [1, 6]. Adjusting.")
+        number_of_loops = max(1, min(6, number_of_loops)) 
+
+    yield {"type": "progress", "stage": f"Determined {number_of_loops} research loops.", "detail": ""}
 
     for i in range(number_of_loops):
-        print(f"\n--- Starting Research Loop {i+1}/{number_of_loops} ---")
-        # -- generate queries -- #
+        yield {"type": "progress", "stage": "Generating search queries...", "detail": f"{i+1}/{number_of_loops}"}
+        
         queries_system_prompts = [(english_queries_system_prompt +
                                    f"Already searched queries: {english_queries}\n" +
                                    f"Current summaries: {english_summaries}"),
+                                  (arabic_queries_system_prompt +
+                                   f"Already searched queries: {arabic_queries}\n" +
+                                   f"Current summaries: {arabic_summaries}")]
 
-                                    (arabic_queries_system_prompt +
-                                    f"Already searched queries: {arabic_queries}\n" +
-                                    f"Current summaries: {arabic_summaries}")]
-
-        # runs both ask function calls in parallel
         queries = await asyncio.gather(*(ask(query_system_prompt, temp_new_query) for query_system_prompt in queries_system_prompts))
 
-        temp_new_query = "Write a follow-up query." # reset
+        temp_new_query = "Write a follow-up query." 
 
-        print("====QUERIES====")
-        print(f"English Query: {queries[0]}")
-        print(f"Arabic Query: {queries[1]}")
+        # MODIFIED: Concise detail for scraping stage
+        yield {"type": "progress", "stage": "Searching and scraping sources...", "detail": f"{i+1}/{number_of_loops}"} 
 
         english_queries.append(queries[0])
         arabic_queries.append(queries[1])
 
-        # -- search the newest queries -- #
-        new_en_urls = tavily_search(english_queries[-1])[:2]   # ≤2
-        new_ar_urls = google_search(arabic_queries[-1])[:2]     # ≤2
+        new_en_urls = tavily_search(english_queries[-1])[:2]  
+        new_ar_urls = google_search(arabic_queries[-1])[:2]    
 
-        # -- scrape the new URLs, keeping only successful ones -- #
         good_en_urls, good_en_scrapes = [], []
-        bad_en_urls, bad_en_scrapes = [], []
+        bad_en_urls, bad_en_scrapes = [], [] 
         for url in new_en_urls:
             scrape = url_scrape(url)
-            if scrape.startswith("Failed to scrape content"):
+            if scrape and not scrape.startswith("Failed to scrape content"):
+                good_en_urls.append(url)
+                good_en_scrapes.append(scrape)
+            else:
                 bad_en_urls.append(url)
                 bad_en_scrapes.append(scrape)
-                continue
-            good_en_urls.append(url)
-            good_en_scrapes.append(scrape)
 
         good_ar_urls, good_ar_scrapes = [], []
         bad_ar_urls, bad_ar_scrapes = [], []
         for url in new_ar_urls:
             scrape = url_scrape(url)
-            if scrape.startswith("Failed to scrape content"):
+            if scrape and not scrape.startswith("Failed to scrape content"):
+                good_ar_urls.append(url)
+                good_ar_scrapes.append(scrape)
+            else:
                 bad_ar_urls.append(url)
                 bad_ar_scrapes.append(scrape)
-                continue
-            good_ar_urls.append(url)
-            good_ar_scrapes.append(scrape)
 
         english_urls.extend(good_en_urls)
         arabic_urls.extend(good_ar_urls)
         english_scrapes.extend(good_en_scrapes)
         arabic_scrapes.extend(good_ar_scrapes)
 
-        # -- summarize the scrapes in parallel -- #
+        yield {"type": "progress", "stage": "Summarizing scraped content...", "detail": f"Found {len(good_en_scrapes) + len(good_ar_scrapes)} new sources."}
+        
         summarize_system_prompts = (
             [summarize_english_system_prompt + f"text: {s}\n" for s in good_en_scrapes] +
             [summarize_arabic_system_prompt  + f"text: {s}\n" for s in good_ar_scrapes]
         )
+
+        if not summarize_system_prompts:
+            yield {"type": "progress", "stage": "No new content to summarize for this loop.", "detail": ""}
+            continue 
+
         summaries = await asyncio.gather(*(ask(summarize_system_prompt, temp_summary_query) for summarize_system_prompt in summarize_system_prompts))
-        temp_summary_query = "Write a summary."
+        temp_summary_query = "Write a summary." 
 
         en_count = len(good_en_scrapes)
         english_summaries.extend(summaries[:en_count])
         arabic_summaries.extend(summaries[en_count:])
 
-        print("====SUMMARIES====")
-        if summaries[:en_count]:
-            print("English Summaries:")
-            for summary in summaries[:en_count]:
-                print(f"- {summary[:100]}...")
-        if summaries[en_count:]:
-            print("\nArabic Summaries:")
-            for summary in summaries[en_count:]:
-                print(f"- {summary[:100]}...")
+    yield {"type": "progress", "stage": "Composing final research paper...", "detail": ""}
 
-    # -- Combine all summaries and their URLs for the synthesizer -- #
     all_sources = []
-    # Combine English summaries with their URLs
     for i in range(len(english_summaries)):
-        all_sources.append(f"Source: [{english_urls[i]}]\nSummary: {english_summaries[i]}")
+        url_citation = english_urls[i] if i < len(english_urls) else "No URL available"
+        all_sources.append(f"Source: [{url_citation}]\nSummary: {english_summaries[i]}")
 
-    # Combine Arabic summaries with their URLs
     for i in range(len(arabic_summaries)):
-        all_sources.append(f"Source: [{arabic_urls[i]}]\nSummary: {arabic_summaries[i]}")
+        url_citation = arabic_urls[i] if i < len(arabic_urls) else "No URL available"
+        all_sources.append(f"Source: [{url_citation}]\nSummary: {arabic_summaries[i]}")
 
-    # -- synthesize every summary into a final response -- #
-    synthesis_prompt_input = (
-        synthesizer_system_prompt +
-        f"Sources:\n" +
-        "\n\n".join(all_sources)
-    )
+    if not all_sources:
+        synthesis_clean = "No relevant information could be found or summarized for your query. Please try a different query."
+    else:
+        synthesis_prompt_input = (
+            synthesizer_system_prompt +
+            f"Sources:\n" +
+            "\n\n".join(all_sources)
+        )
+        synthesis = await ask(synthesis_prompt_input, original_query)
+        synthesis_clean = re.sub(r"<think>.*?</think>", "", synthesis, flags=re.DOTALL).strip()
 
-    synthesis = await ask(synthesis_prompt_input, original_query)
-    synthesis_clean = re.sub(r"<think>.*?</think>", "", synthesis, flags=re.DOTALL).strip()
-
-    # -- All successful URLs are now cited inline in the synthesis -- #
-
-    # printing the final research paper
-    print("\n\n=== RESEARCH PAPER ===")
-    print(f"Query: {original_query}\n")
-    print(synthesis_clean)
-
-    # The separate "REFERENCES" section is no longer needed.
-
-    print("\n===END===")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    yield {"type": "final", "content": synthesis_clean}
