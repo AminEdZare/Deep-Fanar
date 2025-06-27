@@ -93,7 +93,7 @@ async def run_research(original_query: str):
             else:
                 bad_ar_urls.append(url)
                 bad_ar_scrapes.append(scrape)
-
+# test
         english_urls.extend(good_en_urls)
         arabic_urls.extend(good_ar_urls)
         english_scrapes.extend(good_en_scrapes)
