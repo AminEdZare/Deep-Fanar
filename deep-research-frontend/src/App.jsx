@@ -1,7 +1,10 @@
 // deep-research-frontend/src/App.jsx
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import './index.css';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import "./index.css";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 const App = () => {
   const initialMessages = [
@@ -15,13 +18,17 @@ const App = () => {
   const [currentProgress, setCurrentProgress] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showSidePanel, setShowSidePanel] = useState(false);
+  const [finalReportContent, setFinalReportContent] = useState('');
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, currentProgress]);
+    if (!showSidePanel) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, currentProgress, showSidePanel]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -50,10 +57,13 @@ const App = () => {
         } else if (message.type === 'final') {
           setMessages(prevMessages => [...prevMessages, {
             type: 'ai',
-            content: message.content,
+            content: "View Synthesized Research Report",
+            isClickableReport: true,
             timestamp: new Date().toLocaleTimeString()
           }]);
+          setFinalReportContent(message.content);
           setCurrentProgress(null);
+          setShowSidePanel(true);
         } else if (message.type === 'error') {
           setError(message.content);
           setCurrentProgress(null);
@@ -77,7 +87,7 @@ const App = () => {
 
     const userMessage = { type: 'user', content: query, timestamp: new Date().toLocaleTimeString() };
 
-    if (messages === initialMessages) {
+    if (messages.length > 0 && JSON.stringify(messages[0]) === JSON.stringify(initialMessages[0])) {
       setMessages([userMessage]);
     } else {
       setMessages(prevMessages => [...prevMessages, userMessage]);
@@ -87,6 +97,8 @@ const App = () => {
     setError('');
     setCurrentProgress({ type: 'ai', stage: 'Initiating research...', detail: '', timestamp: new Date().toLocaleTimeString() });
     setQuery('');
+    setShowSidePanel(false);
+    setFinalReportContent('');
 
     try {
       const backendUrl = 'http://localhost:8000/research';
@@ -142,19 +154,19 @@ const App = () => {
     }
   };
 
-  const toggleSampleMessages = () => {
-    const isSamplesActive = messages.length > 0 && JSON.stringify(messages[0]) === JSON.stringify(initialMessages[0]);
-
-    if (isSamplesActive) {
-      setMessages([]);
-    } else {
-      setMessages(initialMessages);
-      setError('');
-      setCurrentProgress(null);
-      setIsLoading(false);
-    }
+  const handleClearChat = () => {
+    setMessages(initialMessages);
+    setError('');
+    setCurrentProgress(null);
+    setIsLoading(false);
+    setQuery('');
+    setShowSidePanel(false);
+    setFinalReportContent('');
   };
 
+  const toggleSidePanel = () => {
+    setShowSidePanel(prev => !prev);
+  };
 
   const LoadingSpinner = () => (
     <svg className="icon spinner" viewBox="0 0 24 24">
@@ -164,93 +176,126 @@ const App = () => {
   );
 
   return (
-    <div className="chat-container">
-      {/* NEW HEADER ADDITION START */}
-      <header className="app-header">
-        <div className="header-brand">DeepFanar</div>
-        {/* You can add other header elements here if needed, like a settings icon or user profile */}
-      </header>
-      {/* NEW HEADER ADDITION END */}
-
-      <div className="chat-messages-area">
-        {messages.length === 0 && !isLoading && !currentProgress && (
-          <div className="initial-greeting">
-            Hello! How can I assist you today?
-          </div>
-        )}
-
-        {messages.map((msg, index) => (
-          <div key={index} className={`message-row ${msg.type === 'user' ? 'message-row-user' : 'message-row-ai'}`}>
-            {/* Avatars */}
-            {msg.type === 'ai' && (
-              <div className="avatar ai-avatar">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 7.373v-1.07a3 3 0 013-3h2.328l-1.164-1.164a1 1 0 011.414-1.414l2.829 2.829A1 0 0115 5.328V8h-2.328l-1.164 1.164a1 1 0 01-1.414 0L7 5.328V3z"></path></svg>
-              </div>
-            )}
-            {msg.type === 'user' && (
-              <div className="avatar user-avatar">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              </div>
-            )}
-
-            {/* Message Bubble */}
-            <div className={`message-bubble ${
-              msg.type === 'user' ? 'user-bubble' :
-              msg.type === 'ai' ? 'ai-bubble' :
-              'error-bubble'
-            }`}>
-              {msg.type === 'ai' ? (
-                <div dangerouslySetInnerHTML={{ __html: msg.content }}></div>
-              ) : (
-                <div>{msg.content}</div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Dynamic Progress Message / Loading Indicator */}
-        {currentProgress && (
-          <div className="message-row message-row-ai">
-            <div className="avatar ai-avatar">
-              <LoadingSpinner />
-            </div>
-            <div className="message-bubble ai-bubble">
-              <div className="loading-text">
-                {currentProgress.stage} {currentProgress.detail && `(${currentProgress.detail})`}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* NEW: Fade overlay div */}
-      <div className="chat-fade-overlay"></div>
-
-      {/* Fixed footer area for the input field */}
-      <div className="chat-footer-area">
-        {error && <div className="error-message-fixed">{error}</div>}
-        <div className="input-wrapper-container">
-          <textarea
-            ref={textareaRef}
-            className="chat-textarea"
-            value={query}
-            onChange={handleQueryChange}
-            onKeyDown={handleKeyDown}
-            placeholder={isLoading ? "Please wait..." : "Ask DeepFanar..."}
-            disabled={isLoading}
-            rows={1}
-            aria-label="Research query input"
-          ></textarea>
-          <button
-            onClick={handleResearchSubmit}
-            className="icon-button send-button"
-            disabled={isLoading || !query.trim()}
-            aria-label="Send message"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+    <div className={`main-layout-container ${showSidePanel ? 'side-panel-open' : ''}`}>
+      {/* NEW WRAPPER: This div will now encapsulate all primary chat UI elements */}
+      <div className="chat-interface-wrapper">
+        <header className="app-header">
+          <div className="header-brand">DeepFanar</div>
+          <button onClick={handleClearChat} className="icon-button clear-chat-button" aria-label="Clear chat">
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
           </button>
+        </header>
+
+        <div className="chat-messages-area">
+          {messages.length === 0 && !isLoading && !currentProgress && (
+            <div className="initial-greeting">
+              Hello! How can I assist you today?
+            </div>
+          )}
+
+          {messages.map((msg, index) => (
+            <div key={index} className={`message-row ${msg.type === 'user' ? 'message-row-user' : 'message-row-ai'}`}>
+              {/* Avatars */}
+              {msg.type === 'ai' && (
+                <div className="avatar ai-avatar">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 7.373v-1.07a3 3 0 013-3h2.328l-1.164-1.164a1 1 0 011.414-1.414l2.829 2.829A1 1 0 0115 5.328V8h-2.328l-1.164 1.164a1 1 0 01-1.414 0L7 5.328V3z"></path></svg>
+                </div>
+              )}
+              {msg.type === 'user' && (
+                <div className="avatar user-avatar">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                </div>
+              )}
+
+              {/* Message Bubble */}
+              <div className={`message-bubble ${
+                msg.type === 'user' ? 'user-bubble' :
+                msg.type === 'ai' ? 'ai-bubble' :
+                'error-bubble'
+              }`}>
+                <div className="message-header">
+                  <span className="message-timestamp">{msg.timestamp}</span>
+                </div>
+                {msg.isClickableReport ? (
+                  <button onClick={toggleSidePanel} className="view-report-button">
+                    {msg.content}
+                    <svg className={`icon arrow-icon ${showSidePanel ? 'rotated' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ) : msg.type === 'ai' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  <div>{msg.content}</div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {currentProgress && (
+            <div className="message-row message-row-ai">
+              <div className="avatar ai-avatar">
+                <LoadingSpinner />
+              </div>
+              <div className="message-bubble ai-bubble">
+                <div className="loading-text">
+                  {currentProgress.stage} {currentProgress.detail && `(${currentProgress.detail})`}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="chat-footer-area">
+          {error && <div className="error-message-fixed">{error}</div>}
+          <div className="input-wrapper-container">
+            <textarea
+              ref={textareaRef}
+              className="chat-textarea"
+              value={query}
+              onChange={handleQueryChange}
+              onKeyDown={handleKeyDown}
+              placeholder={isLoading ? "Please wait..." : "Ask DeepFanar..."}
+              disabled={isLoading}
+              rows={1}
+              aria-label="Research query input"
+            ></textarea>
+            <button
+              onClick={handleResearchSubmit}
+              className="send-button"
+              disabled={isLoading || !query.trim()}
+              aria-label="Send message"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </button>
+          </div>
+        </div>
+      </div> {/* END of chat-interface-wrapper */}
+
+      {/* Side panel remains outside the wrapper, as it's fixed to the viewport */}
+      <div className={`side-panel ${showSidePanel ? 'open' : ''}`}>
+        <div className="side-panel-header">
+          <h3>Synthesized Report</h3>
+          <button onClick={toggleSidePanel} className="icon-button close-panel-button" aria-label="Close panel">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="side-panel-content">
+          {finalReportContent ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              {finalReportContent}
+            </ReactMarkdown>
+          ) : (
+            <p>No report loaded.</p>
+          )}
         </div>
       </div>
     </div>
