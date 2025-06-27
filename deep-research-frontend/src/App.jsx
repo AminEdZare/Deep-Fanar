@@ -57,7 +57,7 @@ const App = () => {
         } else if (message.type === 'final') {
           setMessages(prevMessages => [...prevMessages, {
             type: 'ai',
-            content: "View Synthesized Research Report",
+            content: "View Research Report",
             isClickableReport: true,
             timestamp: new Date().toLocaleTimeString()
           }]);
