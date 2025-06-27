@@ -16,6 +16,9 @@ const App = () => {
   const [error, setError] = useState('');
   const [showSidePanel, setShowSidePanel] = useState(false);
   const [finalReportContent, setFinalReportContent] = useState('');
+  const [sources, setSources] = useState([]);
+  const [isTTSLoading, setIsTTSLoading] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -62,6 +65,7 @@ const App = () => {
             timestamp: new Date().toLocaleTimeString()
           }]);
           setFinalReportContent(message.content);
+          setSources(message.sources || []);
           setCurrentProgress(null);
           setShowSidePanel(true);
         } else if (message.type === 'error') {
@@ -167,6 +171,7 @@ const App = () => {
     setQuery('');
     setShowSidePanel(false);
     setFinalReportContent('');
+    setSources([]);
   };
 
   const toggleSidePanel = () => {
@@ -191,6 +196,85 @@ const App = () => {
         .catch(err => {
           console.error('Failed to copy report: ', err);
         });
+    }
+  };
+
+  const handleTextToSpeech = async (retryCount = 0) => {
+    if (!finalReportContent) {
+      console.error('No content to convert to speech');
+      return;
+    }
+
+    setIsTTSLoading(true);
+    try {
+      const backendUrl = 'http://localhost:8000/tts';
+
+      // Check if content is very long and notify user
+      if (finalReportContent.length > 2000) {
+        console.log('Long content detected, will be truncated for TTS');
+        // Show a brief notification that content will be truncated
+        setError('Note: Long research report will be truncated for speech synthesis. Full report available in text.');
+        // Clear the error after 3 seconds
+        setTimeout(() => setError(''), 3000);
+      }
+
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: finalReportContent }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'TTS service error' }));
+        const errorMessage = errorData.detail || `TTS service responded with status ${response.status}`;
+
+        // Handle specific error types
+        if (response.status === 408) {
+          throw new Error(`TTS timeout: ${errorMessage}. Try with a shorter research report.`);
+        } else if (response.status === 503) {
+          // Retry for service unavailable errors
+          if (retryCount < 2) {
+            console.log(`TTS service unavailable, retrying... (attempt ${retryCount + 1})`);
+            setIsTTSLoading(false);
+            setTimeout(() => handleTextToSpeech(retryCount + 1), 2000); // Retry after 2 seconds
+            return;
+          } else {
+            throw new Error(`TTS service unavailable after ${retryCount + 1} attempts. Please try again later.`);
+          }
+        } else {
+          throw new Error(errorMessage);
+        }
+      }
+
+      // Get the audio blob
+      const audioBlob = await response.blob();
+
+      // Create an audio URL and play it
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      setIsAudioPlaying(true);
+
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl); // Clean up the URL
+        setIsAudioPlaying(false);
+      };
+
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        setIsAudioPlaying(false);
+        setError('Failed to play audio. Please try again.');
+      };
+
+      await audio.play();
+
+    } catch (err) {
+      console.error('TTS error:', err);
+      setError(`Failed to convert text to speech: ${err.message}`);
+    } finally {
+      setIsTTSLoading(false);
     }
   };
 
@@ -272,11 +356,10 @@ const App = () => {
                 )}
 
                 {/* Message Bubble */}
-                <div className={`message-bubble ${
-                  msg.type === 'user' ? 'user-bubble' :
+                <div className={`message-bubble ${msg.type === 'user' ? 'user-bubble' :
                   msg.type === 'ai' ? 'ai-bubble' :
-                  'error-bubble'
-                }`}>
+                    'error-bubble'
+                  }`}>
                   <div className="message-header">
                     <span className="message-timestamp">{msg.timestamp}</span>
                   </div>
@@ -346,6 +429,29 @@ const App = () => {
           {/* Title remains on the left */}
           <h3>Synthesized Report</h3>
           <div className="panel-actions">
+            {/* Volume button for TTS */}
+            <button
+              onClick={() => handleTextToSpeech()}
+              className="icon-button"
+              aria-label="Convert report to speech"
+              title={isAudioPlaying ? "Audio is playing..." : "Text to Speech"}
+              disabled={isTTSLoading || !finalReportContent || isAudioPlaying}
+            >
+              {isTTSLoading ? (
+                <LoadingSpinner />
+              ) : isAudioPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+                  <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                  <line x1="19" y1="5" x2="19" y2="19"></line>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+              )}
+            </button>
             {/* Copy button moved back to the right */}
             <button onClick={handleCopyReport} className="icon-button" aria-label="Copy report to clipboard" title="Copy Report">
               {/* Copy Icon: Two Rectangles */}
@@ -371,9 +477,31 @@ const App = () => {
         </div>
         <div className="side-panel-content">
           {finalReportContent ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-              {finalReportContent}
-            </ReactMarkdown>
+            <>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {finalReportContent}
+              </ReactMarkdown>
+
+              {sources.length > 0 && (
+                <div className="sources-section">
+                  <h4>Sources</h4>
+                  <div className="sources-list">
+                    {sources.map((url, index) => (
+                      <div key={index} className="source-item">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="source-link"
+                        >
+                          {url}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <p>No report loaded.</p>
           )}

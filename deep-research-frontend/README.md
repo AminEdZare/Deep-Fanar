@@ -1,12 +1,50 @@
-# React + Vite
+# DeepFanar Research Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based frontend for the DeepFanar AI research assistant that provides comprehensive research capabilities with multilingual support.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **AI-Powered Research**: Submit research queries and receive comprehensive, synthesized reports
+- **Multilingual Support**: Research in both English and Arabic with parallel processing
+- **Real-time Progress**: Stream progress updates during research execution
+- **Text-to-Speech**: Convert research reports to audio using Fanar TTS
+- **Export Options**: Copy reports to clipboard or download as files
+- **Source Citations**: View and access all research sources with clickable links
 
-## Expanding the ESLint configuration
+## Text-to-Speech Feature
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The application includes a text-to-speech feature that allows users to listen to research reports:
+
+- Click the volume icon (🔊) in the side panel to convert the report to speech
+- Uses Fanar-Aura-TTS-1 model for high-quality audio synthesis
+- Automatically truncates very long content to ensure reasonable processing times
+- Shows loading state and playing indicators for better user experience
+
+## Getting Started
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+3. Ensure the backend server is running on `http://localhost:8000`
+
+## Technology Stack
+
+- React 18
+- Vite
+- FastAPI (backend)
+- Fanar AI API
+- OpenAI-compatible TTS API
+
+## Development
+
+This project uses:
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) for Fast Refresh
+- ESLint for code quality
+- CSS modules for styling

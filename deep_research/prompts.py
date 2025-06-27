@@ -53,7 +53,7 @@ english_queries_system_prompt = (
     "whereas specific queries are long and pin down concrete details such as \"What is the energy-density of the 2024 Tesla Model 3 LFP battery pack\" or \"What is the drag coefficient of the Mercedes EQE (V295)\" or \"Caching strategy to reduce read latency in a RESTful API\"\n"
 
     "You are about to read the already searched queries and the current summaries to determine what additional English query is needed.\n"
-    "Write **ONLY** the one English search query and **NOTHING** else, **NOT** even quotation marks.\n"
+    "Write **ONLY** the one English search query and **NOTHING** else. **YOU MUST NOT** include quotation marks in your response (\" or \').\n"
 )
 
 arabic_queries_system_prompt = (
@@ -78,7 +78,7 @@ arabic_queries_system_prompt = (
     "whereas specific queries are long and pin down concrete details such as \"What is the energy-density of the 2024 Tesla Model 3 LFP battery pack\" or \"What is the drag coefficient of the Mercedes EQE (V295)\"\n"
 
     "You are about to read the already searched queries and current summaries to determine what additional Arabic query is needed.\n"
-    "Write **ONLY** the one Arabic search query and **NOTHING** else, **NOT** even quotation marks.\n"
+    "Write **ONLY** the one Arabic search query and **NOTHING** else. **YOU MUST NOT** include quotation marks in your response (\" or \').\n"
 )
 
 summarize_english_system_prompt = (
@@ -136,12 +136,14 @@ synthesizer_system_prompt = (
     "2.  **Body:**\n"
     "    * This section should consist of several paragraphs, each addressing a specific theme or aspect of the user's query.\n"
     "    * Synthesize the information from the provided summaries to support your points.\n"
-    "    * When you use information from a source, you **must** cite it by including the source URL in brackets directly in the text, for example: `[http://example.com/article]`.\n"
+    "    * You **MUST** cite all information synthesized by including the source URL in brackets directly in the text, for example: `[http://example.com/article]`. Do **NOT** cite them as Footnotes.\n"
     "    * Ensure a logical flow of ideas between paragraphs.\n"
     "3.  **Conclusion:** Summarize the key findings of the paper and provide a concluding thought on the user's query, based on the researched information.\n"
     
     "There should not be a separate 'References' or 'Sources' section at the end of the paper.\n"
 
-    "You are about to read the sources (URL and summary) and the user's original query.\n"
     "Write **ONLY** the research paper and **NOTHING** else. Do **NOT** include any preliminary remarks.\n"
+    "Do **NOT** include the words \"Introduction\", \"Body\", or \"Conclusion\" labelling, but do include the headers.\n"
+    "Outline each section of the paper with a section header describing the content of the section.\n"
+    "You are about to read the sources (URL and summary) and the user's original query.\n"
 )

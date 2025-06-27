@@ -3,7 +3,7 @@ beautifulsoup4>=4.12.3   # provides bs4
 python-dotenv>=1.0.1      # provides dotenv
 openai>=1.25.1            # includes AsyncOpenAI
 tavily-python>=0.3.0      # provides tavily
-pdfminer.six>=20250506    # robust PDF parser/extractor
+pdfminer.six==20250327
 Pillow>=10.3.0            # provides PIL.Image
 fastapi>=0.111.0 # Added for the web framework
 uvicorn>=0.30.1 # Added for the ASGI server that runs FastAPI

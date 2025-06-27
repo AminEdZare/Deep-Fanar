@@ -3,12 +3,93 @@ from bs4 import BeautifulSoup
 import json
 from pdfminer.high_level import extract_text
 import io
+import re
 
 from llm import tavily_client
 
 from llm import GOOGLE_API_KEY, GOOGLE_CX_ID
 
 URL_CHAR_LIMIT = 125 # adjust
+MAX_SCRAPE_LENGTH = 5000  # Maximum characters for scraped content
+MAX_LLM_CONTENT_LENGTH = 3000  # Maximum characters to send to LLM
+MAX_TOKENS_PER_CONTENT = 3000  # Conservative token limit per content piece
+
+# --------------------------------------------------------------------------- #
+def estimate_tokens(text: str) -> int:
+    """
+    Rough estimation of token count. OpenAI uses ~4 characters per token on average.
+    This is a conservative estimate to avoid context length issues.
+    """
+    return len(text) // 4  # More realistic estimate: 4 chars per token
+
+def truncate_for_llm(text: str) -> str:
+    """
+    Truncate text to ensure it fits within LLM context limits.
+    """
+    if estimate_tokens(text) <= MAX_TOKENS_PER_CONTENT:
+        return text
+    
+    # Truncate to fit within token limit
+    max_chars = MAX_TOKENS_PER_CONTENT * 4  # Convert back to character limit
+    return text[:max_chars] + "..."
+
+def is_corrupted_content(text: str) -> bool:
+    """
+    Check if scraped content is corrupted or has encoding issues.
+    Returns True if content should be filtered out.
+    """
+    if not text or len(text.strip()) == 0:
+        return True
+    
+    # Check for excessive encoding artifacts (like Ø£Ù\x84ØªØ±Ø§Ù\x84Ù\x8aØªÙ\x8aÙ\x83Ø³)
+    encoding_artifacts = re.findall(r'[ØÙ\x8a\x8b\x8c\x8d\x8e\x8f]+', text)
+    if len(encoding_artifacts) > 10:  # If there are many encoding artifacts
+        return True
+    
+    # Check for excessive non-printable characters
+    non_printable_ratio = len(re.findall(r'[^\x20-\x7E\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]', text)) / len(text)
+    if non_printable_ratio > 0.3:  # If more than 30% are non-printable
+        return True
+    
+    # Check for excessive repeated characters (like spam or corrupted content)
+    repeated_chars = re.findall(r'(.)\1{10,}', text)  # Same character repeated 11+ times
+    if len(repeated_chars) > 5:
+        return True
+    
+    return False
+
+def is_content_too_long(text: str) -> bool:
+    """
+    Check if content is too long for LLM processing.
+    """
+    return estimate_tokens(text) > MAX_TOKENS_PER_CONTENT
+
+def is_usable_content(text: str) -> bool:
+    """
+    Comprehensive check for whether content is usable for LLM processing.
+    """
+    if is_corrupted_content(text):
+        return False
+    
+    # Don't reject content that's too long - let truncation handle that
+    # if is_content_too_long(text):
+    #     return False
+    
+    # Check if content has meaningful text (not just whitespace, numbers, or symbols)
+    meaningful_chars = re.findall(r'[a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]', text)
+    if len(meaningful_chars) < 50:  # Need at least 50 meaningful characters
+        return False
+    
+    return True
+
+def prepare_content_for_llm(text: str) -> str:
+    """
+    Prepare content for LLM processing by truncating if necessary.
+    """
+    if not is_usable_content(text):
+        return ""
+    
+    return truncate_for_llm(text)
 
 # --------------------------------------------------------------------------- #
 def url_scrape(url: str) -> str:
@@ -24,7 +105,7 @@ def url_scrape(url: str) -> str:
         r = requests.get(url, headers=headers, timeout=15)
         r.raise_for_status()
 
-        # ------------ PDF or HTML? ---------------------------------
+        # ------------ PDF or HTML? ---------------------------------
         ctype = (r.headers.get("Content-Type") or "").lower()
         is_pdf_header = r.content[:4] == b"%PDF"
         is_pdf_url    = url.lower().endswith(".pdf")
@@ -41,7 +122,16 @@ def url_scrape(url: str) -> str:
             text = " ".join(soup.stripped_strings)
 
         text = text.strip()
-        return text[:5000] if len(text) > 5000 else text
+        
+        # Apply length limit
+        if len(text) > MAX_SCRAPE_LENGTH:
+            text = text[:MAX_SCRAPE_LENGTH]
+        
+        # Validate content quality
+        if not is_usable_content(text):
+            return f"Failed to scrape usable content from {url}: Content is corrupted, too long, or lacks meaningful text"
+        
+        return text
 
     except Exception as e:
         return f"Failed to scrape content from {url}: {e}"
