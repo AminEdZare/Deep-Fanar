@@ -42,10 +42,20 @@ body, html, #root {
 :root {
   --side-panel-width: 600px; /* Adjust as needed for desired panel width */
   --transition-duration: 0.3s; /* Consistent transition duration */
-  --header-height: 3.5rem;
+  /* header-height variable is less strict now, as padding controls height */
   --footer-height: 7.25rem;
   --chat-horizontal-padding: 1.5rem; /* Horizontal padding for chat area */
   --chat-max-content-width: 45rem; /* Max width for message bubbles */
+
+  /* Common color and shadow variables */
+  --color-primary-500: #63b3ed;
+  --text-color-dark: #e2e8f0;
+  --text-color-light: #a0aec0;
+  --background-color-card: #2d3748;
+  --hover-color: #4a5568;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.5rem;
 }
 
 /* Main layout container (overall wrapper) */
@@ -61,26 +71,28 @@ body, html, #root {
     flex-grow: 1;
     flex-shrink: 1;
     height: 100vh;
-    position: relative;
     background-color: #1a202c;
     transition: flex-basis var(--transition-duration) ease-in-out, max-width var(--transition-duration) ease-in-out;
     min-width: 0;
-    overflow: hidden;
+    overflow: hidden; /* Important for containing children and managing scroll */
+    display: flex; /* CRUCIAL: Make it a flex container */
+    flex-direction: column; /* Stack children vertically */
 }
 
-/* HEADER STYLES - ABSOLUTELY positioned within .chat-interface-wrapper */
+/* --- UNIVERSAL APP HEADER STYLES --- */
+/* This defines the header's appearance for ALL states (initial, chat, etc.) */
 .app-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: var(--header-height);
+  /* Removed fixed height, let padding determine vertical size */
   background-color: #1a202c;
   display: flex;
   align-items: center;
-  padding: 0 var(--chat-horizontal-padding);
+  justify-content: flex-start; /* ALWAYS align brand to the left, no clear chat button */
+  /* Consistent padding for the header, providing the top spacing */
+  padding: 1rem var(--chat-horizontal-padding) 0.5rem var(--chat-horizontal-padding);
   z-index: 40;
-  justify-content: space-between;
+  width: 100%; /* Ensure it spans full width */
+  box-sizing: border-box; /* Include padding in the width calculation */
+  /* Removed position: absolute; and related properties here */
 }
 
 .header-brand {
@@ -89,42 +101,22 @@ body, html, #root {
   color: #90cdf4;
 }
 
-/* Clear chat button styling */
-.clear-chat-button {
-    display: none;
-}
+/* --- IMPORTANT: The `.clear-chat-button` CSS rules are REMOVED entirely from here. --- */
 
-/* Chat messages area - The element that scrolls */
+
+/* Chat messages area - Now a flex item within chat-interface-wrapper */
 .chat-messages-area {
-  position: absolute;
-  top: var(--header-height);
-  bottom: var(--footer-height);
-  left: 0;
-  right: 0;
-  overflow-y: auto;
-  padding: 1.5rem var(--chat-horizontal-padding);
-  padding-right: calc(var(--chat-horizontal-padding) + 8px);
-
+  flex-grow: 1; /* Take up all available vertical space */
+  overflow-y: auto; /* Allow scrolling for messages */
+  padding: 1rem var(--chat-horizontal-padding); /* Adjusted padding */
+  padding-right: calc(var(--chat-horizontal-padding) + 8px); /* Account for scrollbar */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   background-color: transparent;
-  border-radius: 0.75rem;
-  box-shadow: none;
   z-index: 1;
   box-sizing: border-box;
-}
-
-/* Initial greeting message - now part of the flex column inside chat-messages-area */
-.initial-greeting {
-  text-align: center;
-  color: #a0aec0;
-  margin-top: 5rem;
-  font-size: 1.125rem;
-  opacity: 0.8;
-  max-width: var(--chat-max-content-width);
-  margin-left: auto;
-  margin-right: auto;
+  /* Removed absolute positioning properties */
 }
 
 /* Message row (container for avatar + bubble) */
@@ -176,12 +168,12 @@ body, html, #root {
 .icon {
   width: 1.5rem;
   height: 1.5rem;
-  stroke: currentColor; /* Ensures the icon's color matches the parent's text color */
+  stroke: currentColor;
 }
 
 /* Message Bubbles */
 .message-bubble {
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-radius: 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   max-width: 70%;
@@ -198,6 +190,7 @@ body, html, #root {
   border-top-left-radius: 1.25rem;
   border-bottom-left-radius: 1.25rem;
   border-top-right-radius: 0.25rem;
+  padding-top: 0.5rem;
 }
 
 .ai-bubble {
@@ -223,10 +216,9 @@ body, html, #root {
     margin-bottom: 0.25rem;
 }
 
+/* Hide the timestamp */
 .message-timestamp {
-    font-size: 0.75rem;
-    color: #a0aec0;
-    opacity: 0.8;
+    display: none;
 }
 
 .message-row-user .message-header {
@@ -293,7 +285,7 @@ body, html, #root {
     gap: 0.5rem;
     transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
     font-size: 0.95rem;
-    font-weight: 500;
+    font-weight: 800;
 }
 
 .view-report-button:hover {
@@ -341,12 +333,10 @@ body, html, #root {
     font-weight: 500;
 }
 
-/* Chat Footer Area - ABSOLUTELY positioned within .chat-interface-wrapper */
+/* Chat Footer Area - Now a flex item within chat-interface-wrapper */
 .chat-footer-area {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0; /* Prevents the footer from shrinking */
   height: var(--footer-height);
   background-color: #1a202c;
   padding: 0;
@@ -362,14 +352,14 @@ body, html, #root {
 .input-wrapper-container {
   display: flex;
   align-items: flex-end;
-  max-width: var(--chat-max-content-width);
-  width: calc(100% - (2 * var(--chat-horizontal-padding)));
-  margin: 0rem auto 2.25rem auto;
   background-color: #1a202c;
   border-radius: 1.5rem;
   border: 1px solid #718096;
   padding: 0.75rem 1rem;
   position: relative;
+  max-width: var(--chat-max-content-width);
+  width: calc(100% - (2 * var(--chat-horizontal-padding)));
+  margin: 0rem auto 2.25rem auto; /* Default margin for chat footer */
 }
 
 /* Error message that floats above the input field (positioned within chat-footer-area) */
@@ -429,7 +419,7 @@ body, html, #root {
   transition: background-color 0.2s ease-in-out;
   outline: none;
   border: none;
-  cursor: pointer; /* Pointer cursor on hover */
+  cursor: pointer;
 }
 
 /* Ensure no outline/box-shadow on focus/active */
@@ -460,15 +450,16 @@ body, html, #root {
 /* Icon buttons (general, like attachment if re-added) */
 .icon-button {
   padding: 0.5rem;
-  color: #a0aec0; /* Default color for icons */
+  color: #a0aec0;
   border: none;
   cursor: pointer;
   transition: color 0.2s ease-in-out;
   flex-shrink: 0;
+  background: none;
 }
 
 .icon-button:hover:not(:disabled) {
-  color: #e2e8f0; /* Lighter color on hover */
+  color: #e2e8f0;
 }
 
 
@@ -513,6 +504,20 @@ body, html, #root {
     flex-shrink: 0;
 }
 
+/* Style for panel actions (copy/download buttons) */
+.panel-actions {
+  display: flex;
+  gap: 0.5rem; /* Space between buttons */
+}
+.panel-actions .icon-button {
+  background-color: transparent;
+  border-radius: var(--border-radius-md); /* Slightly rounded for buttons */
+}
+.panel-actions .icon-button:hover {
+  background-color: var(--hover-color);
+}
+
+
 .side-panel-header h3 {
     margin: 0;
     font-size: 1.25rem;
@@ -524,17 +529,16 @@ body, html, #root {
     background: none;
     border: none;
     cursor: pointer;
-    color: #a0aec0; /* Ensure icon color is visible */
+    color: #a0aec0;
     padding: 0.5rem;
     border-radius: 0.25rem;
     transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
-    display: flex; /* Ensure flex to center icon if needed */
+    display: flex;
     align-items: center;
     justify-content: center;
-    /* Added for explicit sizing/visibility */
-    width: 2.5rem; /* Give it a definite size */
-    height: 2.5rem; /* Give it a definite size */
-    flex-shrink: 0; /* Prevent shrinking */
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
 }
 
 .close-panel-button:hover {
@@ -546,20 +550,21 @@ body, html, #root {
 .close-panel-button .icon {
     width: 1.5rem;
     height: 1.5rem;
-    stroke: currentColor; /* Ensure icon inherits color */
+    stroke: currentColor;
 }
 
 .side-panel-content {
     flex-grow: 1;
     padding: 1.5rem;
+    padding-top: 0rem;
     color: #e2e8f0;
     line-height: 1.6;
+    overflow-y: auto; /* Make content scrollable if it overflows */
 }
 
 /* Markdown styling within side panel content */
 .side-panel-content h1, .side-panel-content h2, .side-panel-content h3, .side-panel-content h4, .side-panel-content h5, .side-panel-content h6 {
     color: #90cdf4;
-    margin-top: 1.5em;
     margin-bottom: 0.8em;
     line-height: 1.3;
 }
@@ -617,9 +622,59 @@ body, html, #root {
     border-radius: 0.25rem;
 }
 
+/* === INITIAL SCREEN LAYOUT STYLES === */
+/* The initial-screen-wrapper itself will be the flex container for its children */
+.initial-screen-wrapper {
+  flex-grow: 1; /* Take up all available space */
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  height: 100vh; /* Ensure it takes full height */
+  background-color: #1a202c; /* Consistent background */
+}
+
+/* IMPORTANT: No specific `.initial-screen-wrapper > .app-header` overrides needed.
+   The universal `.app-header` handles its styling now. */
+
+
+.initial-center-content {
+  flex-grow: 1; /* Take remaining space */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center vertically */
+  align-items: center; /* Center horizontally */
+  padding: 0 var(--chat-horizontal-padding);
+  text-align: center;
+}
+
+.initial-prompt-text {
+  color: var(--text-color-dark);
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 600px;
+}
+
+.initial-input-container {
+    margin: 0;
+    width: 100%;
+    max-width: 700px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.initial-error-message {
+    margin-top: 15px;
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
+    padding: 0 1rem;
+}
+
+
 /* Media queries for responsiveness */
 @media (max-width: 768px) {
-    /* On smaller screens, the side panel should still overlay */
+    /* Side panel behavior */
     .side-panel {
         position: fixed;
         top: 0;
@@ -638,7 +693,7 @@ body, html, #root {
         transform: translateX(0%);
     }
 
-    /* For small screens, the chat content should NOT shrink/push */
+    /* Chat interface wrapper behavior */
     .chat-interface-wrapper {
         width: 100vw;
         flex-shrink: 0;
@@ -646,15 +701,15 @@ body, html, #root {
         transition: none;
     }
 
-    /* Reset main-layout-container's flex behavior if side-panel is fixed again */
+    /* Main layout container adjustment */
     .main-layout-container {
         display: block;
         overflow: hidden;
     }
 
-    /* Adjust padding for header and footer on smaller screens */
+    /* Adjust padding for header on smaller screens */
     .app-header {
-        padding: 0 1rem;
+        padding: 1rem 1rem 0.5rem 1rem; /* Slightly less top padding on mobile for consistency */
     }
 
     .header-brand {
