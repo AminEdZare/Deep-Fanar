@@ -1,6 +1,6 @@
 # deep_research/app.py (MODIFIED FOR STREAMING)
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
@@ -8,6 +8,7 @@ import asyncio
 import os
 import json # Import json to serialize messages
 from openai import OpenAI
+import tempfile
 
 from main import run_research # Your refactored research function
 
@@ -37,9 +38,14 @@ class QueryRequest(BaseModel):
 class TTSRequest(BaseModel):
     text: str
 
-# Initialize OpenAI client for TTS
+# Initialize OpenAI client for TTS and STT
 FANAR_API_KEY = os.getenv("FANAR_API_KEY")
 tts_client = OpenAI(
+    base_url="https://api.fanar.qa/v1",
+    api_key=FANAR_API_KEY
+)
+
+stt_client = OpenAI(
     base_url="https://api.fanar.qa/v1",
     api_key=FANAR_API_KEY
 )
@@ -47,6 +53,50 @@ tts_client = OpenAI(
 @app.get("/")
 async def root():
     return {"message": "Welcome to the AI Research Assistant API. Use /research for deep research."}
+
+@app.post("/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    """
+    API endpoint to transcribe audio using Fanar STT.
+    """
+    try:
+        # Check if file is audio
+        if not file.content_type.startswith('audio/'):
+            raise HTTPException(status_code=400, detail="File must be an audio file")
+        
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Transcribe using Fanar STT
+            with open(temp_file_path, "rb") as f:
+                response = stt_client.audio.transcriptions.create(
+                    file=f,
+                    model="Fanar-Aura-STT-1"
+                )
+            
+            # Clean up temporary file
+            os.unlink(temp_file_path)
+            
+            return {"text": response.text}
+            
+        except Exception as e:
+            # Clean up temporary file on error
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+            raise e
+            
+    except Exception as e:
+        error_msg = str(e)
+        if "timeout" in error_msg.lower():
+            raise HTTPException(status_code=408, detail="Transcription request timed out. Please try again.")
+        elif "upstream" in error_msg.lower():
+            raise HTTPException(status_code=503, detail="Transcription service is temporarily unavailable. Please try again later.")
+        else:
+            raise HTTPException(status_code=500, detail=f"Transcription failed: {error_msg}")
 
 @app.post("/tts")
 async def text_to_speech(request: TTSRequest):

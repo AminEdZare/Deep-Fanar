@@ -401,7 +401,7 @@ html,
 /* Error message that floats above the input field (positioned within chat-footer-area) */
 .error-message-fixed {
   text-align: center;
-  color: #fc8181;
+  color: #e2e8f0;
   font-size: 0.875rem;
   z-index: 21;
   padding: 0.5rem 1rem;
@@ -458,15 +458,37 @@ html,
   cursor: pointer;
 }
 
+/* Microphone button - positioned within the input container */
+.microphone-button {
+  flex-shrink: 0;
+  background-color: #4a5568;
+  border-radius: 50%;
+  height: 2.5rem;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  margin-left: 0.5rem;
+  transition: background-color 0.2s ease-in-out;
+  outline: none;
+  border: none;
+  cursor: pointer;
+}
+
 /* Ensure no outline/box-shadow on focus/active */
 .send-button:focus,
-.send-button:active {
+.send-button:active,
+.microphone-button:focus,
+.microphone-button:active {
   box-shadow: none;
   border: none;
 }
 
 /* Explicitly ensure the icon remains white on hover and in disabled state */
-.send-button .icon {
+.send-button .icon,
+.microphone-button .icon {
   stroke: white;
   fill: none;
 }
@@ -474,6 +496,35 @@ html,
 .send-button:hover:not(:disabled) {
   background-color: #3182ce;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.microphone-button:hover:not(:disabled) {
+  background-color: #5a6d80;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.microphone-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #2d3748;
+}
+
+/* Recording animation for microphone button */
+.microphone-button.recording {
+  animation: pulse 1.5s ease-in-out infinite alternate;
+  background-color: #e53e3e;
+}
+
+@keyframes pulse {
+  from {
+    background-color: #e53e3e;
+    transform: scale(1);
+  }
+
+  to {
+    background-color: #c53030;
+    transform: scale(1.05);
+  }
 }
 
 .send-button:disabled {
@@ -867,4 +918,34 @@ html,
 
 .source-link:visited {
   color: #9f7aea;
+}
+
+.microphone-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #2d3748;
+}
+
+/* Recording animation for microphone button */
+.microphone-button.recording {
+  animation: pulse 1.5s ease-in-out infinite alternate;
+  background-color: #e53e3e;
+}
+
+@keyframes pulse {
+  from {
+    background-color: #e53e3e;
+    transform: scale(1);
+  }
+
+  to {
+    background-color: #c53030;
+    transform: scale(1.05);
+  }
+}
+
+.send-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #5a6d80;
 }

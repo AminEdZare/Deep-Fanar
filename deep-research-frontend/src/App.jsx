@@ -19,6 +19,10 @@ const App = () => {
   const [sources, setSources] = useState([]);
   const [isTTSLoading, setIsTTSLoading] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [isAudioPaused, setIsAudioPaused] = useState(false);
+  const [currentAudio, setCurrentAudio] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -206,6 +210,7 @@ const App = () => {
     }
 
     setIsTTSLoading(true);
+    setIsAudioPaused(false); // Reset paused state when starting new TTS
     try {
       const backendUrl = 'http://localhost:8000/tts';
 
@@ -256,15 +261,20 @@ const App = () => {
       const audio = new Audio(audioUrl);
 
       setIsAudioPlaying(true);
+      setCurrentAudio(audio);
 
       audio.onended = () => {
         URL.revokeObjectURL(audioUrl); // Clean up the URL
         setIsAudioPlaying(false);
+        setIsAudioPaused(false);
+        setCurrentAudio(null);
       };
 
       audio.onerror = () => {
         URL.revokeObjectURL(audioUrl);
         setIsAudioPlaying(false);
+        setIsAudioPaused(false);
+        setCurrentAudio(null);
         setError('Failed to play audio. Please try again.');
       };
 
@@ -298,6 +308,100 @@ const App = () => {
     }
   };
 
+  const handlePauseResume = () => {
+    if (currentAudio && (isAudioPlaying || isAudioPaused)) {
+      if (isAudioPlaying) {
+        currentAudio.pause();
+        setIsAudioPlaying(false);
+        setIsAudioPaused(true);
+      } else {
+        currentAudio.play();
+        setIsAudioPlaying(true);
+        setIsAudioPaused(false);
+      }
+    } else {
+      // Start new TTS
+      handleTextToSpeech();
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      // Check if MediaRecorder is supported
+      if (!window.MediaRecorder) {
+        setError('Voice recording is not supported in this browser. Please use a modern browser.');
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/mp3' });
+        await transcribeAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Error starting recording:', err);
+      if (err.name === 'NotAllowedError') {
+        setError('Microphone access denied. Please allow microphone permissions and try again.');
+      } else {
+        setError('Failed to start recording. Please check microphone permissions.');
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setMediaRecorder(null);
+    }
+  };
+
+  const transcribeAudio = async (audioBlob) => {
+    try {
+      // Create FormData to send the audio file
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'recording.mp3');
+
+      const response = await fetch('http://localhost:8000/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Transcription failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.text) {
+        setQuery(result.text);
+      } else {
+        setError('No text was transcribed from the audio.');
+      }
+    } catch (err) {
+      console.error('Transcription error:', err);
+      setError('Failed to transcribe audio. Please try again.');
+    }
+  };
+
+  const handleMicrophoneClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
 
   return (
     <div className={`main-layout-container ${showSidePanel ? 'side-panel-open' : ''}`}>
@@ -321,6 +425,26 @@ const App = () => {
                 rows={1}
                 aria-label="Research query input"
               ></textarea>
+              <button
+                onClick={handleMicrophoneClick}
+                className={`microphone-button ${isRecording ? 'recording' : ''}`}
+                disabled={isLoading}
+                aria-label={isRecording ? "Stop recording" : "Start voice recording"}
+                title={isRecording ? "Stop recording" : "Voice input"}
+              >
+                {isRecording ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                )}
+              </button>
               <button
                 onClick={handleResearchSubmit}
                 className="send-button"
@@ -412,6 +536,26 @@ const App = () => {
                 aria-label="Research query input"
               ></textarea>
               <button
+                onClick={handleMicrophoneClick}
+                className={`microphone-button ${isRecording ? 'recording' : ''}`}
+                disabled={isLoading}
+                aria-label={isRecording ? "Stop recording" : "Start voice recording"}
+                title={isRecording ? "Stop recording" : "Voice input"}
+              >
+                {isRecording ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                )}
+              </button>
+              <button
                 onClick={handleResearchSubmit}
                 className="send-button"
                 disabled={isLoading || !query.trim()}
@@ -431,18 +575,22 @@ const App = () => {
           <div className="panel-actions">
             {/* Volume button for TTS */}
             <button
-              onClick={() => handleTextToSpeech()}
+              onClick={handlePauseResume}
               className="icon-button"
-              aria-label="Convert report to speech"
-              title={isAudioPlaying ? "Audio is playing..." : "Text to Speech"}
-              disabled={isTTSLoading || !finalReportContent || isAudioPlaying}
+              aria-label={isAudioPlaying ? "Pause audio" : isAudioPaused ? "Resume audio" : "Convert report to speech"}
+              title={isAudioPlaying ? "Pause audio" : isAudioPaused ? "Resume audio" : "Text to Speech"}
+              disabled={isTTSLoading || !finalReportContent}
             >
               {isTTSLoading ? (
                 <LoadingSpinner />
               ) : isAudioPlaying ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              ) : isAudioPaused ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">
                   <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                  <line x1="19" y1="5" x2="19" y2="19"></line>
                 </svg>
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon">

@@ -102,7 +102,7 @@ def url_scrape(url: str) -> str:
     }
 
     try:
-        r = requests.get(url, headers=headers, timeout=15)
+        r = requests.get(url, headers=headers, timeout=10)
         r.raise_for_status()
 
         # ------------ PDF or HTML? ---------------------------------
