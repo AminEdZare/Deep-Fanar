@@ -1,5 +1,9 @@
 # Deep Fanar v1
 
+## Overview
+
+Deep Fanar v1 is an AI-powered research assistant built by Alexander Gao and Amin Zare with a modern frontend and robust backend, designed to streamline deep research workflows. It supports multilingual research (English & Arabic), real-time progress streaming, and advanced text-to-speech features.
+
 ## Video Demo
 
 [![Watch the demo](https://img.youtube.com/vi/QlFVlOEjWEg/0.jpg)](https://www.youtube.com/watch?v=QlFVlOEjWEg)
@@ -7,10 +11,6 @@
 Check out our video demo above or [watch it on YouTube](https://www.youtube.com/watch?v=QlFVlOEjWEg).
 
 ---
-
-## Overview
-
-Deep Fanar v1 is an AI-powered research assistant built by Alexander Gao and Amin Zare with a modern frontend and robust backend, designed to streamline deep research workflows. It supports multilingual research (English & Arabic), real-time progress streaming, and advanced text-to-speech features.
 
 ## Features
 
