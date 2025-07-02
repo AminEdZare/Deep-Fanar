@@ -73,6 +73,8 @@ The frontend will run on `http://localhost:5173` by default.
 
 ## Architecture
 
-For a detailed overview of the system architecture, see the following PDF:
+For a visual overview of the system architecture, see the diagram below:
 
-[📄 DeepFanar System Architecture](./deep-research-frontend/src/assets/DeepFanar-Architecture.pdf)
+<p align="center">
+  <img src="./deep-research-frontend/src/assets/DeepFanar-Architecture.png" alt="DeepFanar System Architecture" width="100%" />
+</p>
