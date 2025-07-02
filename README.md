@@ -10,7 +10,7 @@ Check out our video demo above or [watch it on YouTube](https://www.youtube.com/
 
 ## Overview
 
-Deep Fanar v1 is an AI-powered research assistant with a modern frontend and robust backend, designed to streamline deep research workflows. It supports multilingual research (English & Arabic), real-time progress streaming, and advanced text-to-speech features.
+Deep Fanar v1 is an AI-powered research assistant built by Alexander Gao and Amin Zare with a modern frontend and robust backend, designed to streamline deep research workflows. It supports multilingual research (English & Arabic), real-time progress streaming, and advanced text-to-speech features.
 
 ## Features
 
@@ -67,19 +67,4 @@ The frontend will run on `http://localhost:5173` by default.
 - View real-time progress and final report.
 - Use the text-to-speech feature or download the report.
 
-## Folder Structure
-- `deep_research/` — FastAPI backend (core logic, API, research orchestration)
-- `deep-research-frontend/` — React frontend (UI, streaming, TTS, export)
-- `requirements.txt` — Python backend dependencies
-- `.gitignore` — Ignore sensitive and build files
-- `README.md` — This file
-
-## Contributing
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-## License
-MIT License. See [LICENSE](LICENSE) for details.
-
 ---
-
-For questions or support, please open an issue on GitHub. 
