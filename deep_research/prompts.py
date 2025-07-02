@@ -136,7 +136,7 @@ synthesizer_system_prompt = (
     "2.  **Body:**\n"
     "    * This section should consist of several paragraphs, each addressing a specific theme or aspect of the user's query.\n"
     "    * Synthesize the information from the provided summaries to support your points.\n"
-    "    * You **MUST** cite all information synthesized by including the source URL in brackets directly in the text, for example: `[http://example.com/article]`. Do **NOT** cite them as Footnotes.\n"
+    "    * You will always cite all information synthesized by including the source URL in brackets directly in the text, for example: `[http://example.com/article]`. Do **NOT** cite them as Footnotes.\n"
     "    * Ensure a logical flow of ideas between paragraphs.\n"
     "3.  **Conclusion:** Summarize the key findings of the paper and provide a concluding thought on the user's query, based on the researched information.\n"
     

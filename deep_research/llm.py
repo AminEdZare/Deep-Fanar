@@ -27,6 +27,6 @@ async def ask(system_prompt: str, user_prompt: str) -> str:
             model=MODEL,
             messages=[{"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}],
-            temperature = 0
+            temperature = 0.1
         )
     return resp.choices[0].message.content
