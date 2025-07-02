@@ -1,4 +1,6 @@
-# DeepFanar
+<p align="center">
+  <img src="./deep-research-frontend/src/assets/PHOTO-2025-06-27-18-31-51.jpg" alt="DeepFanar Banner" width="100%" />
+</p>
 
 ## Overview
 
