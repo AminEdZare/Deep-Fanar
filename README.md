@@ -70,3 +70,9 @@ The frontend will run on `http://localhost:5173` by default.
 - Use the text-to-speech feature or download the report.
 
 ---
+
+## Architecture
+
+For a detailed overview of the system architecture, see the following PDF:
+
+[📄 DeepFanar System Architecture](./deep-research-frontend/src/assets/DeepFanar-Architecture.pdf)
